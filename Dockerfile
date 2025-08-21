@@ -1,20 +1,16 @@
-# Gunakan Node.js versi LTS
-FROM node:18
+FROM node:18-bullseye
 
-# Tentukan working directory
 WORKDIR /app
 
-# Copy package.json & package-lock.json
+# install chromium untuk whatsapp-web.js (puppeteer-core)
+RUN apt-get update && apt-get install -y chromium && rm -rf /var/lib/apt/lists/*
+
 COPY package*.json ./
+RUN npm install --omit=dev
 
-# Install dependencies
-RUN npm install --production
-
-# Copy semua file project
 COPY . .
 
-# Expose port (Railway akan otomatis override dengan PORT env)
-EXPOSE 3000
+# beri tahu path chromium ke puppeteer
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 
-# Jalankan aplikasi
-CMD ["node", "index.js"]
+CMD ["npm", "start"]
