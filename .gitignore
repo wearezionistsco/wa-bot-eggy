@@ -1,4 +1,4 @@
 node_modules/
+sessions.json
+logs.txt
 .wwebjs_auth/
-data/db.json
-.env
