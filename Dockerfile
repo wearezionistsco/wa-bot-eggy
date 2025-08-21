@@ -1,20 +1,20 @@
-# whatsapp-bot/Dockerfile
-FROM node:18-bullseye
+# Gunakan Node.js versi LTS
+FROM node:18
 
-# Install Chromium for puppeteer-core used by whatsapp-web.js
-RUN apt-get update && apt-get install -y chromium && rm -rf /var/lib/apt/lists/*
-
+# Tentukan working directory
 WORKDIR /app
 
+# Copy package.json & package-lock.json
 COPY package*.json ./
-RUN npm install --omit=dev
 
+# Install dependencies
+RUN npm install --production
+
+# Copy semua file project
 COPY . .
 
-# Persist WA session & user db via volumes (Railway toml handles mount)
-VOLUME ["/app/.wwebjs_auth", "/app/data"]
+# Expose port (Railway akan otomatis override dengan PORT env)
+EXPOSE 3000
 
-# Let whatsapp-web.js know where Chromium is
-ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
-
-CMD ["npm", "start"]
+# Jalankan aplikasi
+CMD ["node", "index.js"]
