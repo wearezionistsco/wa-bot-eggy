@@ -18,11 +18,11 @@ const fs = require("fs");
 const path = require("path");
 
 // ======================[ KONFIGURASI ]======================
-const BOT_NUMBER = "6287756266682@c.us";         // nomor bot (juga admin utama)
+const BOT_NUMBER = "6281256513331@c.us";         // nomor bot (juga admin utama)
 const ADMIN_NUMBERS = [BOT_NUMBER];              // tambah admin lain di sini jika perlu
 const EXCLUDED_NUMBERS = [BOT_NUMBER];           // bot tidak balas dirinya sendiri
 const IGNORED_NUMBERS  = [                       // nomor yang tidak dibalas bot (admin balas manual)
-  // "6285xxxxxxxxxx@c.us",
+  // "6285179911407@c.us",
 ];
 
 // Set ini ke true bila kamu ingin hanya tombol yang diterima (ketikan ditolak).
