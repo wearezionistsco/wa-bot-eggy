@@ -1,16 +1,12 @@
-# whatsapp-bot/railway.toml
 [build]
 builder = "dockerfile"
 
 [deploy]
-# Biarkan jalan terus; kalau crash akan direstart
 restartPolicyType = "always"
 
 [volumes]
-  # Persist sesi login WhatsApp
   [volumes.whatsapp_session]
   mountPath = "/app/.wwebjs_auth"
 
-  # Persist session user (db.json)
   [volumes.user_state]
   mountPath = "/app/data"
