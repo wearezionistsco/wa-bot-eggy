@@ -3,7 +3,7 @@ const path = require("path");
 const { Client, LocalAuth } = require("whatsapp-web.js");
 
 // ================= CONFIG =================
-const ADMIN = "6287756266682@c.us"; // nomor admin
+const ADMIN = "6285179911407@c.us"; // nomor admin
 const EXCLUDED_NUMBERS = [ADMIN];   // nomor yang tidak auto-reject call
 
 const STORAGE_PATH = "./storage";
