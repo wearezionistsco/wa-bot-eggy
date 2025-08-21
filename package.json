@@ -1,18 +1,29 @@
-{
-  "name": "whatsapp-bot",
-  "version": "1.0.0",
-  "description": "WhatsApp Bot dengan session, menu tombol, logging, dan auto reject call",
-  "main": "index.js",
-  "scripts": {
-    "start": "node index.js"
-  },
-  "dependencies": {
-    "whatsapp-web.js": "^1.23.0",
-    "qrcode-terminal": "^0.12.0"
-  },
-  "engines": {
-    "node": ">=18.x"
-  },
-  "author": "Your Name",
-  "license": "MIT"
-}
+# Gunakan Node.js base image
+FROM node:18-bullseye-slim
+
+# Install Chromium dependencies
+RUN apt-get update && apt-get install -y \
+  chromium \
+  chromium-sandbox \
+  fonts-ipafont-gothic fonts-wqy-zenhei fonts-thai-tlwg fonts-kacst \
+  --no-install-recommends \
+  && rm -rf /var/lib/apt/lists/*
+
+# Set env supaya whatsapp-web.js tahu lokasi Chromium
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
+
+# Buat direktori kerja
+WORKDIR /app
+
+# Copy package.json dan install dependencies
+COPY package.json ./
+RUN npm install --omit=dev
+
+# Copy semua file project
+COPY . .
+
+# Expose port (Railway otomatis handle)
+EXPOSE 3000
+
+# Jalankan bot
+CMD ["npm", "start"]
