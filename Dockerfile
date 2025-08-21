@@ -1,19 +1,25 @@
 FROM node:18-bullseye-slim
 
-# Install Chrome
-RUN apt-get update && apt-get install -y wget gnupg --no-install-recommends \
-    && wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | apt-key add - \
-    && echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list \
-    && apt-get update && apt-get install -y google-chrome-stable \
-    fonts-ipafont-gothic fonts-wqy-zenhei fonts-thai-tlwg fonts-kacst \
-    --no-install-recommends && rm -rf /var/lib/apt/lists/*
+# Install dependencies
+RUN apt-get update && apt-get install -y \
+    wget gnupg ca-certificates fonts-ipafont-gothic fonts-wqy-zenhei fonts-thai-tlwg fonts-kacst \
+    --no-install-recommends \
+    && rm -rf /var/lib/apt/lists/*
 
-# Set Chrome path
-ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome-stable
+# Install Chromium dari Debian repo
+RUN apt-get update && apt-get install -y chromium \
+    && rm -rf /var/lib/apt/lists/*
+
+# Pastikan executable path
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 
 WORKDIR /app
 
 COPY package.json ./
+
+# Jangan download Chromium bawaan puppeteer
+ENV PUPPETEER_SKIP_DOWNLOAD=true
+
 RUN npm install --omit=dev
 
 COPY . .
