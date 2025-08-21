@@ -1,81 +1,95 @@
-const fs = require("fs");
 const { Client, LocalAuth, Buttons } = require("whatsapp-web.js");
+const fs = require("fs");
 
 // ================= CONFIG =================
-const ADMIN = "6287756266682@c.us"; // ganti nomor admin
-const EXCLUDED_NUMBERS = [ADMIN]; // nomor yang tidak diproses bot
+const ADMIN = "6281256513331@c.us"; // nomor admin/bot
+const EXCLUDED_NUMBERS = [ADMIN]; // nomor yang tidak dibalas bot
 const SESSION_FILE = "./sessions.json";
+const LOG_FILE = "./logs.txt";
 
-let userState = {};   // state tiap user
-let IZIN_TELEPON = []; // nomor yang diizinkan telpon
+// ================= SESSION & STATE =================
+let userState = {};
+let izinTelepon = [];
 
-// load session dari file
+// load session user
 if (fs.existsSync(SESSION_FILE)) {
-  userState = JSON.parse(fs.readFileSync(SESSION_FILE));
+  try {
+    userState = JSON.parse(fs.readFileSync(SESSION_FILE));
+  } catch (err) {
+    console.error("Gagal load sessions:", err);
+    userState = {};
+  }
 }
 
-// simpan session
-function saveSession() {
+// simpan session user berkala
+function saveSessions() {
   fs.writeFileSync(SESSION_FILE, JSON.stringify(userState, null, 2));
+}
+
+// logging pesan masuk
+function logMessage(from, message) {
+  const log = `[${new Date().toISOString()}] ${from}: ${message}\n`;
+  fs.appendFileSync(LOG_FILE, log);
+}
+
+// reset state user
+function resetUser(from) {
+  delete userState[from];
+  saveSessions();
 }
 
 // ================= MENU =================
 function menuUtama() {
   return new Buttons(
-    "📌 Mohon pilih menu berikut:",
+    "📌 *MENU UTAMA*\nSilakan pilih salah satu:",
     [
       { body: "TOP UP" },
       { body: "PESAN PRIBADI" },
       { body: "IZIN PANGGILAN" }
     ],
-    "MENU UTAMA",
-    "Silakan pilih salah satu"
+    "Pilihan tersedia",
+    "Klik tombol di bawah"
   );
 }
 
 function menuTopUp() {
   return new Buttons(
-    "💰 Pilih nominal top up:",
+    "💰 *TOP UP*\nPilih nominal:",
     [
       { body: "150K" },
       { body: "200K" },
       { body: "300K" },
       { body: "500K" },
       { body: "1/2" },
-      { body: "1" }
+      { body: "1" },
+      { body: "Kembali" }
     ],
-    "TOP UP",
-    "Pilih nominal"
+    "Nominal Top Up",
+    "Klik tombol di bawah"
   );
 }
 
 function menuPesanPribadi() {
   return new Buttons(
-    "✉ Pilih jenis pesan pribadi:",
+    "✉ *PESAN PRIBADI*\nSilakan pilih:",
     [
       { body: "BON" },
       { body: "GADAI" },
       { body: "GADAI HP" },
       { body: "TEBUS GADAI" },
-      { body: "LAIN-LAIN" }
+      { body: "LAIN-LAIN" },
+      { body: "Kembali" }
     ],
-    "PESAN PRIBADI",
-    "Silakan pilih"
-  );
-}
-
-function menuBayarBon(nominal) {
-  return new Buttons(
-    `Anda memilih TOP UP ${nominal}.\n\nKonfirmasi pembayaran:`,
-    [{ body: "BAYAR" }, { body: "BON" }, { body: "KEMBALI" }],
-    "KONFIRMASI TOP UP",
-    "Silakan pilih"
+    "Pilihan Pesan",
+    "Klik tombol di bawah"
   );
 }
 
 // ================= CLIENT =================
 const client = new Client({
-  authStrategy: new LocalAuth({ dataPath: "./.wwebjs_auth" }),
+  authStrategy: new LocalAuth({
+    dataPath: "./.wwebjs_auth"
+  }),
   puppeteer: {
     headless: true,
     executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || "/usr/bin/chromium",
@@ -84,8 +98,9 @@ const client = new Client({
 });
 
 client.on("qr", (qr) => {
-  console.log("🔑 Scan QR di sini:");
-  console.log(`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qr)}`);
+  const qrLink = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qr)}`;
+  console.log("🔑 Scan QR lewat link ini:");
+  console.log(qrLink);
 });
 
 client.on("ready", () => {
@@ -97,108 +112,136 @@ client.on("message", async (msg) => {
   const chat = msg.body.trim();
   const from = msg.from;
 
-  // 🚫 Skip jika nomor excluded
+  logMessage(from, chat);
+
+  // 🚫 skip untuk excluded number
   if (EXCLUDED_NUMBERS.includes(from)) return;
 
-  // --- command admin ---
-  if (from === ADMIN && chat.toLowerCase().startsWith("close")) {
-    const parts = chat.split(" ");
-    if (parts.length === 2) {
-      const nomor = parts[1] + "@c.us";
-      delete userState[nomor];
-      saveSession();
-      return msg.reply(`✅ Session untuk ${nomor} ditutup.`);
-    } else {
-      userState = {};
-      saveSession();
-      return msg.reply("✅ Semua session ditutup.");
-    }
-  }
-
-  // --- jika user baru atau tidak ada state ---
+  // jika user baru / belum ada state
   if (!userState[from]) {
     userState[from] = { state: "menu", lastActive: Date.now() };
-    saveSession();
+    saveSessions();
     return msg.reply(menuUtama());
   }
 
-  const state = userState[from].state;
   userState[from].lastActive = Date.now();
-  saveSession();
+  saveSessions();
 
-  // --- Menu utama ---
-  if (chat === "TOP UP") {
-    userState[from].state = "topup";
-    saveSession();
-    return msg.reply(menuTopUp());
-  }
-  if (chat === "PESAN PRIBADI") {
-    userState[from].state = "pesan";
-    saveSession();
-    return msg.reply(menuPesanPribadi());
-  }
-  if (chat === "IZIN PANGGILAN") {
-    userState[from].state = "izin_call";
-    saveSession();
-    return msg.reply("📞 Permintaan izin panggilan telah dikirim ke admin. Tunggu konfirmasi.");
-  }
-
-  // --- Sub menu TOP UP ---
-  if (state === "topup") {
-    const nominal = ["150K","200K","300K","500K","1/2","1"].find(n => n === chat);
-    if (nominal) {
-      userState[from].state = "topup_confirm";
-      userState[from].nominal = nominal;
-      saveSession();
-      return msg.reply(menuBayarBon(nominal));
-    } else {
-      return msg.reply("❌ Pilihan tidak valid. Silakan pilih dari tombol.");
+  // command admin
+  if (from === ADMIN) {
+    if (chat.toLowerCase() === "close") {
+      userState = {};
+      izinTelepon = [];
+      saveSessions();
+      return msg.reply("✅ Semua session direset.");
+    }
+    if (chat.startsWith("close ")) {
+      const nomor = chat.replace("close ", "").trim() + "@c.us";
+      resetUser(nomor);
+      return msg.reply(`Session user ${nomor} direset.`);
     }
   }
 
-  if (state === "topup_confirm") {
-    if (chat === "BAYAR") {
-      userState[from].state = "pending_bayar";
-      saveSession();
-      return msg.reply("✅ Pembayaran Anda sedang diproses admin.");
-    }
-    if (chat === "BON") {
-      userState[from].state = "pending_bon";
-      saveSession();
-      return msg.reply("🕒 Permintaan BON sedang menunggu persetujuan admin.");
-    }
-    if (chat === "KEMBALI") {
-      userState[from].state = "topup";
-      saveSession();
-      return msg.reply(menuTopUp());
-    }
+  // handle menu
+  switch (userState[from].state) {
+    case "menu":
+      if (chat === "TOP UP") {
+        userState[from].state = "topup";
+        saveSessions();
+        return msg.reply(menuTopUp());
+      }
+      if (chat === "PESAN PRIBADI") {
+        userState[from].state = "pesan";
+        saveSessions();
+        return msg.reply(menuPesanPribadi());
+      }
+      if (chat === "IZIN PANGGILAN") {
+        userState[from].state = "izin_call";
+        saveSessions();
+        return msg.reply("📞 Permintaan izin panggilan telah dikirim ke admin.");
+      }
+      break;
+
+    case "topup":
+      if (["150K", "200K", "300K", "500K", "1/2", "1"].includes(chat)) {
+        userState[from].state = "topup_confirm";
+        userState[from].nominal = chat;
+        saveSessions();
+        return msg.reply(
+          new Buttons(
+            `Anda memilih TOP UP *${chat}*.\nApakah Anda yakin?`,
+            [{ body: "Ya, Proses" }, { body: "Ubah Pilihan" }],
+            "Konfirmasi Top Up",
+            "Pilih opsi"
+          )
+        );
+      }
+      if (chat === "Kembali") {
+        userState[from].state = "menu";
+        saveSessions();
+        return msg.reply(menuUtama());
+      }
+      break;
+
+    case "topup_confirm":
+      if (chat === "Ya, Proses") {
+        userState[from].state = "topup_pending";
+        saveSessions();
+        return msg.reply("✅ Top Up diproses, mohon tunggu konfirmasi admin.");
+      }
+      if (chat === "Ubah Pilihan") {
+        userState[from].state = "topup";
+        saveSessions();
+        return msg.reply(menuTopUp());
+      }
+      break;
+
+    case "pesan":
+      if (["BON", "GADAI", "GADAI HP", "TEBUS GADAI", "LAIN-LAIN"].includes(chat)) {
+        userState[from].state = "pesan_pending";
+        userState[from].jenis = chat;
+        saveSessions();
+        return msg.reply(`📌 Pesan *${chat}* dicatat. Mohon tunggu respon admin.`);
+      }
+      if (chat === "Kembali") {
+        userState[from].state = "menu";
+        saveSessions();
+        return msg.reply(menuUtama());
+      }
+      break;
   }
 
-  // --- Sub menu Pesan Pribadi ---
-  if (state === "pesan") {
-    if (["BON","GADAI","GADAI HP","TEBUS GADAI","LAIN-LAIN"].includes(chat)) {
-      userState[from].state = "pending_pesan";
-      saveSession();
-      return msg.reply(`📌 Pesan pribadi "${chat}" dicatat. Menunggu admin.`);
-    } else {
-      return msg.reply("❌ Pilihan tidak valid. Silakan pilih dari tombol.");
-    }
-  }
-
-  // --- default jika tidak dikenali ---
-  return msg.reply("❌ Pilihan tidak valid. Silakan gunakan tombol menu.");
+  // fallback invalid input
+  return msg.reply("❌ Pilihan tidak valid. Silakan pilih sesuai menu yang tersedia.");
 });
 
 // ================= HANDLER PANGGILAN =================
 client.on("call", async (call) => {
-  if (!IZIN_TELEPON.includes(call.from)) {
+  if (EXCLUDED_NUMBERS.includes(call.from)) return;
+
+  if (!izinTelepon.includes(call.from)) {
     await call.reject();
-    client.sendMessage(call.from, "❌ Maaf, panggilan ke admin tidak diizinkan.\nGunakan menu IZIN PANGGILAN untuk meminta izin.");
-    console.log("❌ Panggilan ditolak dari:", call.from);
-  } else {
-    console.log("✅ Panggilan diizinkan dari:", call.from);
+    client.sendMessage(
+      call.from,
+      "❌ Maaf, panggilan tidak diizinkan. Gunakan menu IZIN PANGGILAN."
+    );
   }
 });
+
+// ================= TIMEOUT SESSION =================
+setInterval(() => {
+  const now = Date.now();
+  for (let from in userState) {
+    const diff = (now - userState[from].lastActive) / 1000;
+    if (diff > 3600 && ["pesan_pending", "topup_pending"].includes(userState[from].state)) {
+      resetUser(from);
+      client.sendMessage(from, "⏰ Sesi berakhir otomatis (1 jam). Silakan mulai dari menu utama.");
+    } else if (diff > 300 && userState[from].state === "izin_call") {
+      resetUser(from);
+      client.sendMessage(from, "⏰ Permintaan izin panggilan kadaluarsa. Silakan ajukan ulang.");
+    }
+  }
+}, 60000);
 
 // Jalankan bot
 client.initialize();
