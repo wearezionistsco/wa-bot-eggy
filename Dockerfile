@@ -1,20 +1,20 @@
-FROM node:18-slim
+# whatsapp-bot/Dockerfile
+FROM node:18-bullseye
 
-# Install chromium
-RUN apt-get update && apt-get install -y \
-    chromium \
-    chromium-driver \
-    --no-install-recommends && \
-    rm -rf /var/lib/apt/lists/*
+# Install Chromium for puppeteer-core used by whatsapp-web.js
+RUN apt-get update && apt-get install -y chromium && rm -rf /var/lib/apt/lists/*
 
-# Set workdir
 WORKDIR /app
 
-# Copy files
 COPY package*.json ./
-RUN npm install
+RUN npm install --omit=dev
 
 COPY . .
 
-# Start bot
+# Persist WA session & user db via volumes (Railway toml handles mount)
+VOLUME ["/app/.wwebjs_auth", "/app/data"]
+
+# Let whatsapp-web.js know where Chromium is
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
+
 CMD ["npm", "start"]
