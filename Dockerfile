@@ -1,38 +1,23 @@
-FROM node:18
+FROM node:18-bullseye-slim
 
-# Set working dir
+# Install Chromium & deps
+RUN apt-get update && apt-get install -y \
+    chromium-browser \
+    chromium-sandbox \
+    fonts-ipafont-gothic fonts-wqy-zenhei fonts-thai-tlwg fonts-kacst \
+    --no-install-recommends \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set path Chromium
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
+
 WORKDIR /app
 
-# Install Chromium dan dependencies yang dibutuhkan Puppeteer
-RUN apt-get update && apt-get install -y \
-    chromium \
-    chromium-driver \
-    fonts-liberation \
-    libatk-bridge2.0-0 \
-    libatk1.0-0 \
-    libcups2 \
-    libdrm2 \
-    libgbm1 \
-    libgtk-3-0 \
-    libnspr4 \
-    libnss3 \
-    libx11-xcb1 \
-    libxcomposite1 \
-    libxdamage1 \
-    libxrandr2 \
-    xdg-utils \
-    --no-install-recommends && \
-    rm -rf /var/lib/apt/lists/*
+COPY package.json ./
+RUN npm install --omit=dev
 
-# Copy dependencies
-COPY package*.json ./
-RUN npm install --production
-
-# Copy source
 COPY . .
 
-# Puppeteer pakai Chromium yang sudah diinstall
-ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
+EXPOSE 3000
 
-# Jalankan app
 CMD ["npm", "start"]
