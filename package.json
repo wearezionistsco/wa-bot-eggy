@@ -1,7 +1,7 @@
 {
   "name": "whatsapp-bot",
   "version": "1.0.0",
-  "description": "WhatsApp bot with full buttons, sessions, timeouts, and call control",
+  "description": "WhatsApp bot full features (menu, sessions, call control, timeouts)",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
