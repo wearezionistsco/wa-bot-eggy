@@ -1,19 +1,18 @@
 {
   "name": "whatsapp-bot",
   "version": "1.0.0",
-  "description": "WhatsApp bot dengan tombol interaktif, session, logging, dan admin control",
+  "description": "WhatsApp Bot dengan session, menu tombol, logging, dan auto reject call",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js",
-    "dev": "nodemon index.js"
+    "start": "node index.js"
   },
-  "author": "Bot System",
-  "license": "MIT",
   "dependencies": {
-    "whatsapp-web.js": "^1.22.1",
+    "whatsapp-web.js": "^1.23.0",
     "qrcode-terminal": "^0.12.0"
   },
-  "devDependencies": {
-    "nodemon": "^3.0.2"
-  }
+  "engines": {
+    "node": ">=18.x"
+  },
+  "author": "Your Name",
+  "license": "MIT"
 }
