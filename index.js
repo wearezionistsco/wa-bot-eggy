@@ -4,7 +4,7 @@ const fs = require("fs");
 const path = require("path");
 
 // ================= CONFIG =================
-const BOT_NUMBER = "6287756266682@c.us";               // nomor WA bot (sekalian admin utama)
+const BOT_NUMBER = "6281256513331@c.us";               // nomor WA bot (sekalian admin utama)
 const ADMIN_NUMBERS = [BOT_NUMBER];                    // bisa tambah admin lain di sini
 const EXCLUDED_NUMBERS = [BOT_NUMBER];                 // jangan balas diri sendiri
 const IGNORED_NUMBERS  = [                             // orang tertentu: bot tidak balas otomatis
