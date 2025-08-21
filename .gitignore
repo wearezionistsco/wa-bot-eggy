@@ -2,4 +2,3 @@ node_modules/
 .wwebjs_auth/
 data/db.json
 .env
-npm-debug.log*
