@@ -1,0 +1,14 @@
+{
+  "build": {
+    "builder": "DOCKERFILE"
+  },
+  "deploy": {
+    "restartPolicyType": "ON_FAILURE"
+  },
+  "volumes": [
+    {
+      "mountPath": "/app/.wwebjs_auth",
+      "name": "whatsapp-session"
+    }
+  ]
+}
